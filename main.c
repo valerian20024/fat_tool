@@ -74,6 +74,7 @@ void parse_mbr(const char *img_filename, PartitionEntry *partitions[]) {
     fclose(fp);
 }
 
+/*
 int parse_fat32_info(FILE *fp, const PartitionEntry *partition, FAT32Info *info_out) {
     uint8_t sector[SECTOR_SIZE];
 
@@ -125,8 +126,14 @@ int parse_fat32_info(FILE *fp, const PartitionEntry *partition, FAT32Info *info_
     }
 
     return 0;
-}
+}*/
 
+int freePartitions(PartitionEntry *partitions[]) {
+    for (int i = 0; i < PARTITION_COUNT; i++) {
+        free(partitions[i]);
+    }
+    return 0;
+}
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
@@ -137,20 +144,26 @@ int main(int argc, char *argv[]) {
     char *filename = argv[1];
     char *mode = argv[2];
 
-    PartitionEntry *partitions = malloc(PARTITION_COUNT * sizeof(PartitionEntry));
-    if (!partitions) {
-        fprintf(stderr, "Failed to allocate memory for partitions\n");
-        return EXIT_FAILURE;
+    // Creating array of PartitionEntry pointers
+    PartitionEntry *partitions[PARTITION_COUNT];
+    for (int i = 0; i < PARTITION_COUNT; i++) {
+        partitions[i] = malloc(sizeof(PartitionEntry));
+        if (!partitions[i]) {
+            fprintf(stderr, "Failed to allocate memory for partition entry\n");
+            return EXIT_FAILURE;
+        }
     }
 
     if (strcmp(mode, "--mbr") == 0) {
         parse_mbr(filename, partitions);
     } else if (strcmp(mode, "--fat") == 0) {
-        parse_fat32_info(filename, partitions);
+        //parse_fat32_info(filename, partitions);
     } else {
         fprintf(stderr, "This mode doesn't exist. Use 'mbr'.\n");
+        freePartitions(partitions);
         exit(EXIT_FAILURE);
     }
 
+    freePartitions(partitions);
     return 0;
 }
