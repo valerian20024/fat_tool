@@ -16,13 +16,12 @@
 #define SECTOR_SIZE 512
 
 
-
-
-
 /*
 This function takes as input a filename of a disk image and parses the MBR to extract every partition information.
 */
 void parse_mbr(const char *img_filename, PartitionEntry *partitions[]) {
+    fprintf(stdout, "Parsing MBR partition table of \"%s\":\n", img_filename);
+
     FILE *fp = fopen(img_filename, "rb");
     if (!fp) {
         fprintf(stderr, "parse_mbr: Failed to open image file\n");
@@ -38,16 +37,12 @@ void parse_mbr(const char *img_filename, PartitionEntry *partitions[]) {
     }
 
     /* 
-    For each partition, read from the buffer and create a dedicated PartitionEntry struct.
-    Parse every fiel of the struct and print them.
+    For each partition, read from the buffer and write to the provided
+    array of partitions.
     */
-    fprintf(stdout, "Parsing MBR partition table of \"%s\":\n", img_filename);
     for (int i = 0; i < PARTITION_COUNT; i++) {
-        PartitionEntry entry;
         int offset = PARTITION_ENTRY_OFFSET + i * PARTITION_ENTRY_SIZE;
-        memcpy(&entry, mbr + offset, sizeof(PartitionEntry));
-        
-        printPartitionEntry(&entry);
+        memcpy(partitions[i], mbr + offset, sizeof(PartitionEntry));
     }
 
     fclose(fp);
@@ -126,13 +121,6 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
 
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        fprintf(stderr, "Usage: %s <disk_image_file> <mode>\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-
-    char *filename = argv[1];
-    char *mode = argv[2];
 
     // Creating array of PartitionEntry pointers
     PartitionEntry *partitions[PARTITION_COUNT];
@@ -144,26 +132,38 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    FAT32Info *fat32_info = malloc(sizeof(FAT32Info));
+
     // Parsing arguments
+    if (argc < 3) {
+        fprintf(stderr, "Usage: %s <disk_image_file> <mode>\n", argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    char *filename = argv[1];
+    char *mode = argv[2];
+
     if (strcmp(mode, "--mbr") == 0) {
         parse_mbr(filename, partitions);
+        for (int i = 0; i < PARTITION_COUNT; i++) {
+            printPartitionEntry(partitions[i]);
+        }
 
     } else if (strcmp(mode, "--fat") == 0) {
         for (int i = 0; i < PARTITION_COUNT; i++) {
-            fprintf(stdout, "Parsing partition number %d\n", i + 1);  
-            FAT32Info *fat32_info = malloc(sizeof(FAT32Info));
+            parse_mbr(filename, partitions);
             parse_fat32_info(filename, partitions[i], fat32_info);
-            
-            free(fat32_info);
         }
     } else {
         fprintf(stderr, "This mode doesn't exist. Use '--mbr' or '--fat'.\n");
 
         freePartitions(partitions, PARTITION_COUNT);
+        free(fat32_info);
         exit(EXIT_FAILURE);
     }
 
     freePartitions(partitions, PARTITION_COUNT);
+    free(fat32_info);
     return 0;
 }
 
