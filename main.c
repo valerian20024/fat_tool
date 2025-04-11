@@ -8,7 +8,6 @@
 #define PARTITION_ENTRY_SIZE 16
 #define PARTITION_ENTRY_OFFSET 446
 
-#define SECTOR_SIZE 512
 
 typedef struct {
     uint8_t  boot_flag;       // 0x80 = bootable
@@ -74,59 +73,15 @@ void parse_mbr(const char *img_filename, PartitionEntry *partitions[]) {
     fclose(fp);
 }
 
-/*
-int parse_fat32_info(FILE *fp, const PartitionEntry *partition, FAT32Info *info_out) {
-    uint8_t sector[SECTOR_SIZE];
 
-    // Seek to the start of the partition (boot sector)
-    if (fseek(fp, partition->lba_start * SECTOR_SIZE, SEEK_SET) != 0) {
-        perror("Failed to seek to FAT32 boot sector");
-        return -1;
-    }
+int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info *info_out) {
+    FILE *fp = fopen(filename, "rb");
 
-    if (fread(sector, 1, SECTOR_SIZE, fp) != SECTOR_SIZE) {
-        perror("Failed to read FAT32 boot sector");
-        return -1;
-    }
+    fprintf(stdout, "Parsing FAT32 info \n");
 
-    // Check jump instruction (first byte), OEM name, and other soft validations
-    // Most FAT32 volumes also contain 0x55AA at byte 510/511 (we skip that check for now)
-
-    // System ID validation
-    if (partition->system_id != 0x0B && partition->system_id != 0x0C) {
-        fprintf(stderr, "Not a FAT32 partition (System ID = 0x%02X)\n", partition->system_id);
-        return -1;
-    }
-
-    // Extract fields
-    info_out->bytes_per_sector    = sector[11] | (sector[12] << 8);
-    info_out->sectors_per_cluster = sector[13];
-    info_out->reserved_sectors    = sector[14] | (sector[15] << 8);
-    info_out->num_fats            = sector[16];
-    info_out->fat_size_sectors    = sector[36] | (sector[37] << 8) | (sector[38] << 16) | (sector[39] << 24);
-    info_out->root_cluster        = sector[44] | (sector[45] << 8) | (sector[46] << 16) | (sector[47] << 24);
-
-    // Simple FAT32 validity checks
-    if (info_out->bytes_per_sector != 512 &&
-        info_out->bytes_per_sector != 1024 &&
-        info_out->bytes_per_sector != 2048 &&
-        info_out->bytes_per_sector != 4096) {
-        fprintf(stderr, "Invalid bytes per sector: %u\n", info_out->bytes_per_sector);
-        return -1;
-    }
-
-    if (info_out->num_fats != 2) {
-        fprintf(stderr, "Unexpected number of FATs: %u (should be 2)\n", info_out->num_fats);
-        return -1;
-    }
-
-    if (info_out->root_cluster < 2) {
-        fprintf(stderr, "Invalid root cluster: %u\n", info_out->root_cluster);
-        return -1;
-    }
-
+    fclose(fp);
     return 0;
-}*/
+}
 
 int freePartitions(PartitionEntry *partitions[]) {
     for (int i = 0; i < PARTITION_COUNT; i++) {
@@ -154,12 +109,19 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // Parsing arguments
     if (strcmp(mode, "--mbr") == 0) {
         parse_mbr(filename, partitions);
+
     } else if (strcmp(mode, "--fat") == 0) {
-        //parse_fat32_info(filename, partitions);
+        FAT32Info *fat32_info = malloc(sizeof(FAT32Info));
+        parse_fat32_info(filename, partitions[0], fat32_info);
+        
+        free(fat32_info);
+
     } else {
-        fprintf(stderr, "This mode doesn't exist. Use 'mbr'.\n");
+        fprintf(stderr, "This mode doesn't exist. Use '--mbr' or '--fat'.\n");
+
         freePartitions(partitions);
         exit(EXIT_FAILURE);
     }
