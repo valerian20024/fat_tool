@@ -5,6 +5,13 @@
 #include <stdlib.h>
 #include "helpers.h"
 
+/*
+This function prints a PartitionEntry to the terminal, showing
+all its fields, as well as computing the number of sectors.
+
+(field) indicates 'field' has been computed and is not present
+in the PartitionEntry 
+*/
 void printPartitionEntry(PartitionEntry *entry) {
     uint32_t start_sector = entry->lba_start;
     uint32_t sector_count = entry->sector_count;
@@ -19,6 +26,9 @@ void printPartitionEntry(PartitionEntry *entry) {
     printf("  (Sector Count): 0x%08X (%u)\n\n", sector_count, sector_count);
 }
 
+/*
+This function frees an array of PartitionEntry of size partition_count.
+*/
 int freePartitions(PartitionEntry *partitions[], size_t partition_count) {
     for (size_t i = 0; i < partition_count; i++) {
         free(partitions[i]);
