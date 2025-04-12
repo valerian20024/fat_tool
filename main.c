@@ -107,14 +107,7 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
     }
 
     // Print the extracted info
-    printf("FAT32 Volume Information:\n");
-    printf("  Bytes per sector     : %u\n", info_out->bytes_per_sector);
-    printf("  Sectors per cluster  : %u\n", info_out->sectors_per_cluster);
-    printf("  Reserved sectors     : %u\n", info_out->reserved_sectors);
-    printf("  Number of FATs       : %u\n", info_out->num_fats);
-    printf("  FAT size (sectors)   : %u\n", info_out->fat_size_sectors);
-    printf("  Root cluster         : %u\n", info_out->root_cluster);
-
+    printFAT32Info(info_out);
     fclose(fp);
     return 0;
 }

@@ -44,5 +44,6 @@ void printPartitionEntry(PartitionEntry *entry);
 
 int freePartitions(PartitionEntry *partitions[], size_t partition_count);
 
+void printFAT32Info(FAT32Info *info);
 
 #endif

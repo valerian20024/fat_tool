@@ -36,5 +36,14 @@ int freePartitions(PartitionEntry *partitions[], size_t partition_count) {
     return 0;
 }
 
+void printFAT32Info(FAT32Info *info) {
+    printf("FAT32 Volume Information:\n");
+    printf("  Sectors per cluster  : 0x%02X (%u)\n", info->sectors_per_cluster, info->sectors_per_cluster);
+    printf("  Bytes per sector     : 0x%04X (%u)\n", info->bytes_per_sector, info->bytes_per_sector);
+    printf("  Number of FATs       : 0x%02X (%u)\n", info->num_fats, info->num_fats);
+    printf("  Reserved sectors     : 0x%08X (%u)\n", info->reserved_sectors, info->reserved_sectors);
+    printf("  FAT size (sectors)   : 0x%08X (%u)\n", info->fat_size_sectors, info->fat_size_sectors);
+    printf("  Root cluster         : 0x%08X (%u)\n", info->root_cluster, info->root_cluster);
+}
 
 #endif
