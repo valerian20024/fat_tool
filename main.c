@@ -56,6 +56,13 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
         return -1;
     }
 
+    // Check System ID (from partition table)
+    if (partition->system_id != 0x0B && partition->system_id != 0x0C) {
+        fprintf(stderr, "Partition is not FAT32 (System ID: 0x%02X)\n", partition->system_id);
+        fclose(fp);
+        return -1;
+    }
+
     printf("Parsing FAT32 info...\n");
 
     // Seek to the partition's first sector (boot sector)
@@ -72,13 +79,6 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
         return -1;
     }
 
-    // Check System ID (from partition table)
-    if (partition->system_id != 0x0B && partition->system_id != 0x0C) {
-        fprintf(stderr, "Partition is not FAT32 (System ID: 0x%02X)\n", partition->system_id);
-        fclose(fp);
-        return -1;
-    }
-
     // Optional: check for 0x55AA signature at end of sector
     if (sector[510] != 0x55 || sector[511] != 0xAA) {
         fprintf(stderr, "Invalid boot sector signature (expected 0x55AA)\n");
@@ -86,15 +86,27 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
         return -1;
     }
 
-    // Extract and populate FAT32Info
-    info_out->bytes_per_sector     = sector[11] | (sector[12] << 8);
-    info_out->sectors_per_cluster  = sector[13];
-    info_out->reserved_sectors     = sector[14] | (sector[15] << 8);
-    info_out->num_fats             = sector[16];
-    info_out->fat_size_sectors     = sector[36] | (sector[37] << 8) |
-                                     (sector[38] << 16) | (sector[39] << 24);
-    info_out->root_cluster         = sector[44] | (sector[45] << 8) |
-                                     (sector[46] << 16) | (sector[47] << 24);
+    // Extract and populate FAT32Info. Little-endian so
+    // we need to shift bits.
+    info_out->bytes_per_sector = 
+        sector[11] | (sector[12] << 8);
+
+    info_out->sectors_per_cluster = 
+        sector[13];
+
+    info_out->reserved_sectors = 
+        sector[14] | (sector[15] << 8);
+
+    info_out->num_fats = 
+        sector[16];
+
+    info_out->fat_size_sectors = 
+        sector[36] | (sector[37] << 8) | 
+        (sector[38] << 16) | (sector[39] << 24);
+
+    info_out->root_cluster = 
+        sector[44] | (sector[45] << 8) | 
+        (sector[46] << 16) | (sector[47] << 24);
 
     // Basic sanity checks
     if (info_out->bytes_per_sector == 0 ||
@@ -106,8 +118,6 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
         return -1;
     }
 
-    // Print the extracted info
-    printFAT32Info(info_out);
     fclose(fp);
     return 0;
 }
@@ -125,7 +135,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    FAT32Info *fat32_info = malloc(sizeof(FAT32Info));
 
     // Parsing arguments
     if (argc < 3) {
@@ -143,20 +152,23 @@ int main(int argc, char *argv[]) {
         }
 
     } else if (strcmp(mode, "--fat") == 0) {
+        parse_mbr(filename, partitions);
         for (int i = 0; i < PARTITION_COUNT; i++) {
-            parse_mbr(filename, partitions);
-            parse_fat32_info(filename, partitions[i], fat32_info);
+            FAT32Info *fat32_info = malloc(sizeof(FAT32Info));
+            
+            // Only if it is FAT32 shall we print its informations
+            if (!parse_fat32_info(filename, partitions[i], fat32_info)) {
+                printFAT32Info(fat32_info);
+            }
+            
+            free(fat32_info);
         }
     } else {
         fprintf(stderr, "This mode doesn't exist. Use '--mbr' or '--fat'.\n");
-
-        freePartitions(partitions, PARTITION_COUNT);
-        free(fat32_info);
-        exit(EXIT_FAILURE);
     }
 
     freePartitions(partitions, PARTITION_COUNT);
-    free(fat32_info);
+    //free(fat32_info);
     return 0;
 }
 
