@@ -31,7 +31,11 @@ typedef struct {
     uint8_t  sectors_per_cluster;
     uint16_t bytes_per_sector;
     uint8_t  num_fats;
-    uint16_t reserved_sectors;
+
+    // not to be confused with BPB_RsvdSecCnt at offset 14.
+    // It's BPB_Reserved at offset 52.
+    uint8_t reserved_sectors[12];  
+
     uint32_t fat_size_sectors;
     uint32_t root_cluster;
 } FAT32Info;

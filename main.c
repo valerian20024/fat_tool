@@ -1,6 +1,3 @@
-#ifndef __MAIN_C__
-#define __MAIN_C__
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -49,7 +46,9 @@ void parse_mbr(const char *img_filename, PartitionEntry *partitions[]) {
 }
 
 
-int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info *info_out) {
+int parse_fat32_info(char *filename, const PartitionEntry *partition, 
+    FAT32Info *info_out) 
+{
     FILE *fp = fopen(filename, "rb");
     if (!fp) {
         perror("Error opening image file");
@@ -58,7 +57,9 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
 
     // Check System ID (from partition table)
     if (partition->system_id != 0x0B && partition->system_id != 0x0C) {
-        fprintf(stderr, "Partition is not FAT32 (System ID: 0x%02X)\n", partition->system_id);
+        fprintf(stderr, 
+            "Partition is not FAT32 (System ID: 0x%02X)\n", 
+            partition->system_id);
         fclose(fp);
         return -1;
     }
@@ -94,18 +95,17 @@ int parse_fat32_info(char *filename, const PartitionEntry *partition, FAT32Info 
     info_out->sectors_per_cluster = 
         sector[13];
 
-    info_out->reserved_sectors = 
-        sector[14] | (sector[15] << 8);
+    memcpy(info_out->reserved_sectors, &sector[52], sizeof(info_out->reserved_sectors));
 
     info_out->num_fats = 
         sector[16];
 
     info_out->fat_size_sectors = 
-        sector[36] | (sector[37] << 8) | 
+         sector[36]        | (sector[37] << 8) | 
         (sector[38] << 16) | (sector[39] << 24);
 
     info_out->root_cluster = 
-        sector[44] | (sector[45] << 8) | 
+         sector[44]        | (sector[45] << 8) | 
         (sector[46] << 16) | (sector[47] << 24);
 
     // Basic sanity checks
@@ -134,11 +134,13 @@ int main(int argc, char *argv[]) {
         fat32_info[i] = malloc(sizeof(FAT32Info));
 
         if (!partitions[i]) {
-            fprintf(stderr, "main: Failed to allocate memory for partition entry\n");
+            fprintf(stderr, 
+                "main: Failed to allocate memory for partition entry\n");
             return EXIT_FAILURE;
         }
         if (!fat32_info[i]) {
-            fprintf(stderr, "main: Failed to allocate memory for FAT32 info\n");
+            fprintf(stderr, 
+                "main: Failed to allocate memory for FAT32 info\n");
             return EXIT_FAILURE;
         }
     }
@@ -174,5 +176,3 @@ int main(int argc, char *argv[]) {
     freeFAT32Info(fat32_info, PARTITION_COUNT);
     return 0;
 }
-
-#endif
