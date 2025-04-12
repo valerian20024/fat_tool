@@ -41,11 +41,13 @@ void printFAT32Info(FAT32Info *info) {
     printf("  Sectors per cluster  : 0x%02X (%u)\n", info->sectors_per_cluster, info->sectors_per_cluster);
     printf("  Bytes per sector     : 0x%04X (%u)\n", info->bytes_per_sector, info->bytes_per_sector);
     printf("  Number of FATs       : 0x%02X (%u)\n", info->num_fats, info->num_fats);
-    printf("  Reserved sectors     : ");
-    for (size_t i = 0; i < sizeof(info->reserved_sectors); i++) {
+    printf("  Reserved sectors     : 0x%04X (%u)\n", info->reserved_sector_count, info->reserved_sector_count);
+    
+    // For BPB_Reserved
+    /*for (size_t i = 0; i < sizeof(info->reserved_sectors); i++) {
         printf("%02X ", info->reserved_sectors[i]);
     }
-    printf("\n");
+    printf("\n");*/
     printf("  FAT size (sectors)   : 0x%08X (%u)\n", info->fat_size_sectors, info->fat_size_sectors);
     printf("  Root cluster         : 0x%08X (%u)\n", info->root_cluster, info->root_cluster);
 }

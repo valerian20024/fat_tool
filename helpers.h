@@ -32,14 +32,34 @@ typedef struct {
     uint16_t bytes_per_sector;
     uint8_t  num_fats;
 
-    // not to be confused with BPB_RsvdSecCnt at offset 14.
-    // It's BPB_Reserved at offset 52.
-    uint8_t reserved_sectors[12];  
+    // BPB_RsvdSecCnt at offset 14.
+    uint16_t reserved_sector_count; 
+    // BPB_Reserved at offset 52.
+    //uint8_t reserved_sectors[12];  
 
+    // FAT32 32-bit count of sectors occupied by ONE FAT.
     uint32_t fat_size_sectors;
     uint32_t root_cluster;
 } FAT32Info;
 
+/*
+This structure gathers all informations of a directory entry
+in FAT32.
+*/
+typedef struct {
+    uint8_t name[11];
+    uint8_t attr;
+    uint8_t nt_reserved;
+    uint8_t creation_time_tenths;
+    uint16_t creation_time;
+    uint16_t creation_date;
+    uint16_t access_date;
+    uint16_t cluster_high;
+    uint16_t modification_time;
+    uint16_t modification_date;
+    uint16_t cluster_low;
+    uint32_t file_size;
+} __attribute__((packed)) DirectoryEntry;
 
 /*
 Prototypes declaration.
