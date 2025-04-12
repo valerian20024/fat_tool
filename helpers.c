@@ -46,4 +46,11 @@ void printFAT32Info(FAT32Info *info) {
     printf("  Root cluster         : 0x%08X (%u)\n", info->root_cluster, info->root_cluster);
 }
 
+int freeFAT32Info(FAT32Info *info[], size_t partition_count) {
+    for (int i = 0; i < partition_count; i++) {
+        free(info[i]);
+    }
+    return 0;
+}
+
 #endif
